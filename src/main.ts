@@ -178,11 +178,14 @@ async function bootstrap(): Promise<void> {
   }
 
   app.enableShutdownHooks();
-  await app.listen(appConfig.port, '0.0.0.0');
+  // 监听地址与 README 的部署口径一致：生产在 nginx 反代之后，只绑回环，公网流量一律走 443；
+  // 开发没有反代且需被同一局域网的手机/真机访问（见 .env.development 的 CORS_ORIGINS、FILES_BASE_URL），保留全网卡绑定。
+  const listenHost = appConfig.isProduction ? '127.0.0.1' : '0.0.0.0';
+  await app.listen(appConfig.port, listenHost);
 
   const logger = app.get(Logger);
   logger.log(
-    `HTTP 服务已启动: http://localhost:${appConfig.port}`,
+    `HTTP 服务已启动: http://${listenHost}:${appConfig.port}`,
     'Bootstrap',
   );
   if (swaggerConfigValue.enabled) {

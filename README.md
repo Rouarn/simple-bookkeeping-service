@@ -6,10 +6,13 @@
 
 ```bash
 pnpm install
-cp .env.example .env.development   # 按需修改
-pnpm run start:dev                 # 默认 http://localhost:3000
+cp .env.example .env.development
+openssl rand -base64 48
+pnpm run start:dev
 ```
 
+- 上面 `openssl` 命令执行 4 次，把输出分别填入 `JWT_ACCESS_SECRET`、`JWT_REFRESH_SECRET`、`FILES_SIGN_SECRET`、`REFRESH_PEPPER`。示例里的 `change-me` 占位值会被弱密钥校验直接拒绝，不替换则启动即失败；
+- 服务默认监听 `http://localhost:3000`；
 - 开发环境（`NODE_ENV !== production`）TypeORM `synchronize: true`，表结构自动同步；
 - 生产环境**永久关闭** synchronize，所有 DDL 手动执行。
 
@@ -36,6 +39,10 @@ NODE_ENV=production node dist/main.js
 ```
 
 建议用 systemd 托管（`Restart=always`、`EnvironmentFile=/path/to/.env.production`）。
+
+`EnvironmentFile` 里的 `NODE_ENV` 会被进程直接读到：若照抄 `.env.example` 保留 `NODE_ENV=development`，再用 `node dist/main.js` 直启，
+服务就会以开发模式运行——TypeORM `synchronize: true` 自动改生产表结构、Swagger 无鉴权挂载。务必改为 `production`；
+用 `pnpm start:prod` 启动时脚本已强制 `NODE_ENV=production`，该值不再生效。
 
 ### 3. 网络与 nginx（关键安全项）
 

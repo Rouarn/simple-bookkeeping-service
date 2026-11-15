@@ -40,7 +40,8 @@ const PHONE =
   `1${randomInt(3, 9)}${String(Date.now()).slice(-9)}`;
 // 凭证图片素材目录：可选；未配置时跳过图片生成，只造账单数据
 const IMAGE_DIR = process.env.SEED_IMAGE_DIR ?? null;
-const UPLOAD_DIR = resolve('./uploads');
+// 与服务端 UPLOAD_DIR 同源：图片落在服务实际读取的目录下，否则库里有了 bill_photos 行但签名 URL 取不到文件
+const UPLOAD_DIR = resolve(process.env.UPLOAD_DIR ?? './uploads');
 
 // 分类（来自种子数据）
 const EXPENSE_CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
