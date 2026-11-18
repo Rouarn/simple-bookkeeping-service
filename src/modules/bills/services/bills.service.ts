@@ -879,11 +879,19 @@ export class BillsService {
     const monthRows = await executor.query<
       Array<{ month_expense: string | number | null }>
     >(
+      // 截止本单：按 (record_date, record_time, created_at) 的账本顺序累加。
+      // record_time 来自时间选择器，只到分钟——同一天同一分钟连续记的多笔会撞时间，
+      // 只用 record_time <= 会把「本单之后才记的」也算进来（实测 10 元那单被算成 122）。
+      // 因此同日期同时间再按 created_at 兜底，保持与列表 ORDER BY 的口径一致。
       `SELECT COALESCE(SUM(amount), 0) AS month_expense
          FROM bills
         WHERE user_id = ? AND type = 'expense'
           AND record_date >= ? AND record_date < ?
-          AND ( record_date < ? OR (record_date = ? AND record_time <= ?) )`,
+          AND (
+                record_date < ?
+             OR (record_date = ? AND record_time < ?)
+             OR (record_date = ? AND record_time = ? AND created_at <= ?)
+          )`,
       [
         userId,
         monthStart,
@@ -891,6 +899,9 @@ export class BillsService {
         row.record_date,
         row.record_date,
         row.record_time,
+        row.record_date,
+        row.record_time,
+        row.created_at,
       ],
     );
 
